@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Global City Relationship Visualization Platform</title>
+
+<link rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/ol@7.5.2/ol.css">
+
+<script src="https://cdn.jsdelivr.net/npm/ol@7.5.2/dist/ol.js"></script>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Segoe UI","Microsoft YaHei",sans-serif;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#06121f;
+}
+
+#map{
+    width:100%;
+    height:100%;
+}
+
+/* 星空背景 */
+
+body::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:100%;
+
+    height:100%;
+
+    background:
+    radial-gradient(circle at 20% 20%,rgba(255,255,255,0.15) 1px,transparent 1px),
+    radial-gradient(circle at 70% 40%,rgba(255,255,255,0.15) 1px,transparent 1px),
+    radial-gradient(circle at 40% 70%,rgba(255,255,255,0.15) 1px,transparent 1px);
+
+    background-size:220px 220px;
+
+    z-index:1;
+
+    pointer-events:none;
+
+}
+
+/* 标题 */
+
+.header{
+
+    position:absolute;
+
+    top:20px;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    z-index:999;
+
+    padding:18px 42px;
+
+    border-radius:18px;
+
+    background:rgba(0,0,0,0.35);
+
+    backdrop-filter:blur(18px);
+
+    color:#ffffff;
+
+    font-size:32px;
+
+    font-weight:bold;
+
+    text-shadow:
+    0 0 10px rgba(0,229,255,0.8),
+    0 0 20px rgba(0,229,255,0.5);
+
+    box-shadow:0 0 30px rgba(22,119,255,0.5);
+
+    border:1px solid rgba(255,255,255,0.15);
+
+}
+
+/* 左侧面板 */
+
+.sidebar{
+
+    position:absolute;
+
+    top:110px;
+
+    left:20px;
+
+    width:360px;
+
+    z-index:999;
+
+    background:rgba(10,25,40,0.78);
+
+    backdrop-filter:blur(18px);
+
+    border-radius:24px;
+
+    padding:24px;
+
+    border:1px solid rgba(255,255,255,0.15);
+
+    box-shadow:0 8px 30px rgba(0,0,0,0.45);
+
+    color:#ffffff;
+
+    text-shadow:0 0 10px rgba(0,229,255,0.6);
+
+}
+
+.sidebar h2{
+
+    margin-bottom:20px;
+
+    font-size:28px;
+
+}
+
+/* 输入框 */
+
+.input-box{
+
+    width:100%;
+
+    padding:16px;
+
+    border:none;
+
+    outline:none;
+
+    border-radius:14px;
+
+    margin-bottom:15px;
+
+    background:rgba(255,255,255,0.12);
+
+    color:#ffffff;
+
+    font-size:16px;
+
+    text-shadow:0 0 8px rgba(0,229,255,0.5);
+
+}
+
+.input-box::placeholder{
+
+    color:rgba(255,255,255,0.7);
+
+}
+
+/* 联想列表 */
+
+.suggest-box{
+
+    background:rgba(0,0,0,0.75);
+
+    border-radius:12px;
+
+    overflow:hidden;
+
+    margin-top:-8px;
+
+    margin-bottom:10px;
+
+}
+
+.suggest-item{
+
+    padding:12px;
+
+    cursor:pointer;
+
+    transition:0.3s;
+
+    color:#ffffff;
+
+    text-shadow:0 0 8px rgba(0,229,255,0.5);
+
+}
+
+.suggest-item:hover{
+
+    background:#1677ff;
+
+}
+
+/* 按钮 */
+
+.btn{
+
+    width:100%;
+
+    padding:16px;
+
+    margin-top:12px;
+
+    border:none;
+
+    border-radius:14px;
+
+    font-size:17px;
+
+    cursor:pointer;
+
+    background:linear-gradient(135deg,#1677ff,#00c6ff);
+
+    color:#ffffff;
+
+    font-weight:bold;
+
+    transition:0.3s;
+
+    text-shadow:0 0 8px rgba(255,255,255,0.6);
+
+}
+
+.btn:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+    0 8px 20px rgba(0,198,255,0.45),
+    0 0 25px rgba(0,229,255,0.35);
+
+}
+
+/* 信息卡片 */
+
+.info-card{
+
+    position:absolute;
+
+    top:110px;
+
+    right:20px;
+
+    width:340px;
+
+    z-index:999;
+
+    background:rgba(10,25,40,0.78);
+
+    backdrop-filter:blur(18px);
+
+    border-radius:24px;
+
+    padding:24px;
+
+    color:#ffffff;
+
+    border:1px solid rgba(255,255,255,0.15);
+
+    box-shadow:0 8px 30px rgba(0,0,0,0.45);
+
+    text-shadow:0 0 10px rgba(0,229,255,0.5);
+
+}
+
+.info-card h2{
+
+    margin-bottom:20px;
+
+    font-size:28px;
+
+}
+
+.info-item{
+
+    margin-bottom:22px;
+
+}
+
+.label{
+
+    font-size:16px;
+
+    opacity:0.85;
+
+    margin-bottom:6px;
+
+}
+
+/* 数据高亮 */
+
+.value{
+
+    font-size:32px;
+
+    font-weight:bold;
+
+    color:#00ffff;
+
+    text-shadow:
+    0 0 8px rgba(0,255,255,0.9),
+    0 0 18px rgba(0,255,255,0.6);
+
+}
+
+/* 坐标 */
+
+.coords{
+
+    position:absolute;
+
+    left:20px;
+
+    bottom:20px;
+
+    z-index:999;
+
+    background:rgba(10,25,40,0.82);
+
+    backdrop-filter:blur(10px);
+
+    padding:12px 18px;
+
+    border-radius:12px;
+
+    color:#ffffff;
+
+    border:1px solid rgba(255,255,255,0.15);
+
+    text-shadow:0 0 8px rgba(0,229,255,0.5);
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+🌍 Global City Relationship Visualization Platform
+</div>
+
+<div class="sidebar">
+
+<h2>City Exploration</h2>
+
+<input
+id="city1"
+class="input-box"
+placeholder="Enter departure city"
+autocomplete="off">
+
+<div id="suggest1" class="suggest-box"></div>
+
+<input
+id="city2"
+class="input-box"
+placeholder="Enter destination city"
+autocomplete="off">
+
+<div id="suggest2" class="suggest-box"></div>
+
+<button class="btn"
+onclick="calculateDistance()">
+
+✈ Start Analysis
+
+</button>
+
+<button class="btn"
+onclick="clearAll()">
+
+🔄 Reset Map
+
+</button>
+
+</div>
+
+<div class="info-card">
+
+<h2>Analysis Result</h2>
+
+<div class="info-item">
+<div class="label">City Distance</div>
+<div class="value" id="distanceText">--</div>
+</div>
+
+<div class="info-item">
+<div class="label">Estimated Flight Time</div>
+<div class="value" id="flightText">--</div>
+</div>
+
+<div class="info-item">
+<div class="label">Time Difference</div>
+<div class="value" id="timeText">--</div>
+</div>
+
+<div class="info-item">
+<div class="label">Long-distance Relationship Index</div>
+<div class="value" id="loveText">--</div>
+</div>
+
+</div>
+
+<div class="coords" id="coords">
+Longitude / Latitude
+</div>
+
+<div id="map"></div>
+
+<script>
+
+const map = new ol.Map({
+
+    target:'map',
+
+    layers:[
+
+        new ol.layer.Tile({
+
+            source:new ol.source.XYZ({
+
+                url:'https://webrd02.is.autonavi.com/appmaptile?lang=en&size=1&scale=1&style=7&x={x}&y={y}&z={z}'
+
+            })
+
+        })
+
+    ],
+
+    view:new ol.View({
+
+        center:ol.proj.fromLonLat([105,35]),
+
+        zoom:2
+
+    })
+
+});
+
+const cityData = {
+
+    "beijing":{
+        name:"Beijing",
+        lon:116.4074,
+        lat:39.9042,
+        timezone:8
+    },
+
+    "shanghai":{
+        name:"Shanghai",
+        lon:121.4737,
+        lat:31.2304,
+        timezone:8
+    },
+
+    "tokyo":{
+        name:"Tokyo",
+        lon:139.6917,
+        lat:35.6895,
+        timezone:9
+    },
+
+    "new york":{
+        name:"New York",
+        lon:-74.0060,
+        lat:40.7128,
+        timezone:-5
+    },
+
+    "london":{
+        name:"London",
+        lon:-0.1276,
+        lat:51.5072,
+        timezone:0
+    },
+
+    "paris":{
+        name:"Paris",
+        lon:2.3522,
+        lat:48.8566,
+        timezone:1
+    },
+
+    "moscow":{
+        name:"Moscow",
+        lon:37.6173,
+        lat:55.7558,
+        timezone:3
+    },
+
+    "sydney":{
+        name:"Sydney",
+        lon:151.2093,
+        lat:-33.8688,
+        timezone:10
+    }
+
+};
+
+const cityKeys = Object.keys(cityData);
+
+function setupSuggest(inputId,suggestId){
+
+    const input =
+    document.getElementById(inputId);
+
+    const suggest =
+    document.getElementById(suggestId);
+
+    input.addEventListener("input",function(){
+
+        const value =
+        this.value.toLowerCase();
+
+        suggest.innerHTML = "";
+
+        if(value === "") return;
+
+        cityKeys.forEach(city=>{
+
+            if(city.indexOf(value)!==-1){
+
+                const div =
+                document.createElement("div");
+
+                div.className =
+                "suggest-item";
+
+                div.innerHTML =
+                city;
+
+                div.onclick = function(){
+
+                    input.value = city;
+
+                    suggest.innerHTML = "";
+
+                };
+
+                suggest.appendChild(div);
+
+            }
+
+        });
+
+    });
+
+}
+
+setupSuggest("city1","suggest1");
+setupSuggest("city2","suggest2");
+
+const vectorSource =
+new ol.source.Vector();
+
+const vectorLayer =
+new ol.layer.Vector({
+
+    source:vectorSource
+
+});
+
+map.addLayer(vectorLayer);
+
+function calculateDistance(){
+
+    vectorSource.clear();
+
+    const city1 =
+    document.getElementById('city1')
+    .value
+    .trim()
+    .toLowerCase();
+
+    const city2 =
+    document.getElementById('city2')
+    .value
+    .trim()
+    .toLowerCase();
+
+    if(!cityData[city1] ||
+       !cityData[city2]){
+
+        alert("Please enter a correct city name");
+
+        return;
+    }
+
+    const c1 = cityData[city1];
+    const c2 = cityData[city2];
+
+    const startCoord =
+    ol.proj.fromLonLat([c1.lon,c1.lat]);
+
+    const endCoord =
+    ol.proj.fromLonLat([c2.lon,c2.lat]);
+
+    const pointStyle =
+    new ol.style.Style({
+
+        image:new ol.style.Circle({
+
+            radius:10,
+
+            fill:new ol.style.Fill({
+
+                color:'#00e5ff'
+
+            }),
+
+            stroke:new ol.style.Stroke({
+
+                color:'#ffffff',
+
+                width:2
+
+            })
+
+        })
+
+    });
+
+    const startPoint =
+    new ol.Feature({
+
+        geometry:
+        new ol.geom.Point(startCoord)
+
+    });
+
+    startPoint.setStyle(pointStyle);
+
+    vectorSource.addFeature(startPoint);
+
+    const endPoint =
+    new ol.Feature({
+
+        geometry:
+        new ol.geom.Point(endCoord)
+
+    });
+
+    endPoint.setStyle(pointStyle);
+
+    vectorSource.addFeature(endPoint);
+
+    const midX =
+    (startCoord[0] +
+    endCoord[0]) / 2;
+
+    const midY =
+    (startCoord[1] +
+    endCoord[1]) / 2
+
+    + 1200000;
+
+    const curve =
+    new ol.geom.LineString([
+
+        startCoord,
+
+        [midX,midY],
+
+        endCoord
+
+    ]);
+
+    const line =
+    new ol.Feature({
+
+        geometry:curve
+
+    });
+
+    line.setStyle(
+
+        new ol.style.Style({
+
+            stroke:
+            new ol.style.Stroke({
+
+                color:'#00e5ff',
+
+                width:3,
+
+                lineDash:[12,12]
+
+            })
+
+        })
+
+    );
+
+    vectorSource.addFeature(line);
+
+    const plane =
+    new ol.Feature({
+
+        geometry:
+        new ol.geom.Point(startCoord)
+
+    });
+
+    plane.setStyle(
+
+        new ol.style.Style({
+
+            text:new ol.style.Text({
+
+                text:'✈',
+
+                font:'34px sans-serif',
+
+                fill:new ol.style.Fill({
+
+                    color:'#00e5ff'
+
+                }),
+
+                stroke:new ol.style.Stroke({
+
+                    color:'rgba(255,255,255,0.25)',
+
+                    width:1
+
+                })
+
+            })
+
+        })
+
+    );
+
+    vectorSource.addFeature(plane);
+
+    map.getView().fit(
+
+        curve.getExtent(),
+
+        {
+
+            padding:[120,120,120,120],
+
+            duration:1200
+
+        }
+
+    );
+
+    setTimeout(function(){
+
+        animatePlane(
+            plane,
+            curve
+        );
+
+    },1300);
+
+    const distance =
+    ol.sphere.getDistance(
+
+        [c1.lon,c1.lat],
+
+        [c2.lon,c2.lat]
+
+    );
+
+    const km =
+    (distance/1000).toFixed(0);
+
+    animateNumber(
+        "distanceText",
+        km,
+        " km"
+    );
+
+    const flight =
+    (km/800).toFixed(1);
+
+    animateNumber(
+        "flightText",
+        flight,
+        " h"
+    );
+
+    const diff =
+    Math.abs(
+        c1.timezone -
+        c2.timezone
+    );
+
+    document.getElementById(
+        "timeText"
+    ).innerHTML =
+
+    diff + " h";
+
+    let love = "";
+
+    if(km < 1000){
+
+        love = "😊 Very Close";
+
+    }else if(km < 5000){
+
+        love = "🥺 A Bit Far";
+
+    }else{
+
+        love = "💔 Super Long Distance";
+
+    }
+
+    document.getElementById(
+        "loveText"
+    ).innerHTML = love;
+
+}
+
+function animatePlane(
+    plane,
+    lineGeometry
+){
+
+    let progress = 0;
+
+    const interval =
+    setInterval(function(){
+
+        progress += 0.003;
+
+        if(progress >= 1){
+
+            clearInterval(interval);
+
+        }
+
+        const coord =
+        lineGeometry.getCoordinateAt(
+            progress
+        );
+
+        plane
+        .getGeometry()
+        .setCoordinates(coord);
+
+    },16);
+
+}
+
+function animateNumber(
+    id,
+    target,
+    unit
+){
+
+    let current = 0;
+
+    const step =
+    target / 50;
+
+    const interval =
+    setInterval(function(){
+
+        current += step;
+
+        if(current >= target){
+
+            current = target;
+
+            clearInterval(interval);
+
+        }
+
+        document.getElementById(id)
+        .innerHTML =
+
+        Math.floor(current)
+        + unit;
+
+    },20);
+
+}
+
+function clearAll(){
+
+    vectorSource.clear();
+
+    document.getElementById(
+        "distanceText"
+    ).innerHTML = "--";
+
+    document.getElementById(
+        "flightText"
+    ).innerHTML = "--";
+
+    document.getElementById(
+        "timeText"
+    ).innerHTML = "--";
+
+    document.getElementById(
+        "loveText"
+    ).innerHTML = "--";
+
+    map.getView().animate({
+
+        center:
+        ol.proj.fromLonLat([105,35]),
+
+        zoom:2,
+
+        duration:1000
+
+    });
+
+}
+
+map.on('pointermove',
+function(evt){
+
+    const coord =
+    ol.proj.toLonLat(
+        evt.coordinate
+    );
+
+    document.getElementById(
+        'coords'
+    ).innerHTML =
+
+    "Lon：" +
+    coord[0].toFixed(4) +
+
+    "  Lat：" +
+    coord[1].toFixed(4);
+
+});
+
+</script>
+
+</body>
+</html>
